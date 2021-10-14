@@ -59,3 +59,7 @@ $ curl -v -X 'POST' http://localhost:4040/reload
 < 
 "ok"
 ```
+
+## License
+
+This project is licensed under the [Mozilla Public License 2.0](LICENSE).
