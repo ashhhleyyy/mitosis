@@ -1,0 +1,7 @@
+# cargo build output
+/target
+# testing
+config.toml
+mock-server/
+# IDEA-based IDEs
+.idea/
