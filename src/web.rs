@@ -39,6 +39,13 @@ fn translation_fallback(translations: &TranslationsMap, translated: &mut HashMap
     }
 }
 
+async fn list_all_locales(translations: TranslationsHolder) -> WebApiResult {
+    let locales = translations.0.translations.read().unwrap().keys()
+        .map(|s| s.clone())
+        .collect::<Vec<_>>();
+    Ok(Box::new(warp::reply::json(&locales)))
+}
+
 async fn reload_translations(translations: TranslationsHolder) -> WebApiResult {
     match translations.reload().await {
         Ok(_) => {
@@ -55,14 +62,32 @@ pub async fn run(config: Config, translations: TranslationsHolder) {
     let cors = warp::cors();
 
     let translate_bulk = warp::path("translate")
-        .and(warp::filters::method::get())
         .and(warp::filters::path::param())
         .and(warp::filters::body::json())
+        .and(warp::filters::method::get())
         .and_then({
             let translations = translations.clone();
             let config = config.clone();
             move |locale: String, keys: Vec<String>|
                 translate(config.fallback_locale.clone(), translations.clone(), locale, keys)
+        });
+
+    let translate_all = warp::path("translate")
+        .and(warp::filters::path::param())
+        .and(warp::path("all"))
+        .and(warp::filters::method::get())
+        .and_then({
+            let translations = translations.clone();
+            let config = config.clone();
+            move |locale: String|
+                translate(config.fallback_locale.clone(), translations.clone(), locale, translations.get_all_keys())
+        });
+
+    let list_locales = warp::path("locales")
+        .and(warp::filters::method::get())
+        .and_then({
+            let translations = translations.clone();
+            move || list_all_locales(translations.clone())
         });
 
     let reload_translations = warp::path("reload")
@@ -77,6 +102,8 @@ pub async fn run(config: Config, translations: TranslationsHolder) {
 
     let combined = translate_bulk
         .or(reload_translations)
+        .or(translate_all)
+        .or(list_locales)
         .or(trans);
 
     warp::serve(combined.with(cors))

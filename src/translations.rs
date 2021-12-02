@@ -43,6 +43,14 @@ impl TranslationsHolder {
 
         Ok(())
     }
+
+    pub fn get_all_keys(&self) -> Vec<String> {
+        let translations = self.0.translations.read().unwrap();
+        translations.values()
+            .flat_map(|m| m.keys())
+            .map(|s| s.clone())
+            .collect::<Vec<_>>()
+    }
 }
 
 pub async fn load_translations_from(sources: &[TranslationSource]) -> ApiResult<TranslationsMap> {
