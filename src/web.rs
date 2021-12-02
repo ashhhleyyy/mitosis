@@ -30,9 +30,9 @@ async fn translate(default_locale: String, translations: TranslationsHolder, loc
     Ok(Box::new(warp::reply::json(&translated)))
 }
 
-async fn translation_fallback(translations: &TranslationsMap, translated: &mut HashMap<String, String>, key: &str, default_locale: &str) {
-    if let Some(default_translations) = translations.get(&default_locale) {
-        translated.insert(key.to_string(),default_translations.get(&key)
+fn translation_fallback(translations: &TranslationsMap, translated: &mut HashMap<String, String>, key: &str, default_locale: &str) {
+    if let Some(default_translations) = translations.get(default_locale) {
+        translated.insert(key.to_string(),default_translations.get(key)
             .cloned().unwrap_or_else(|| key.to_string()));
     } else {
         translated.insert(key.to_string(), key.to_string());
