@@ -26,17 +26,18 @@ pub enum TranslationSource {
 
 // TODO: Should mods be validated here (check fabric.mod.json exists maybe?)
 impl TranslationSource {
-    pub async fn find_children(&self) -> ApiResult<Vec<TranslationSource>> {
-        match self {
+    pub async fn find_children(&self) -> ApiResult<Option<Vec<TranslationSource>>> {
+        Ok(match self {
             TranslationSource::ZipPack(path) => {
                 // TODO: Handle JIJ mods here?
                 let path = path.clone();
-                tokio::task::spawn_blocking(move || {
+                let result = tokio::task::spawn_blocking(move || {
                     extract_lang_files_from_zip(&path)
-                }).await.expect("failed to execute blocking task")
+                }).await.expect("failed to execute blocking task")?;
+                Some(result)
             },
             TranslationSource::DirectoryPack(path) => {
-                extract_lang_files_from_dir(path).await
+                Some(extract_lang_files_from_dir(path).await?)
             },
             TranslationSource::ModsDirectory(directory) => {
                 let mut entries = tokio::fs::read_dir(directory).await?;
@@ -48,7 +49,7 @@ impl TranslationSource {
                         }
                     }
                 }
-                Ok(mods)
+                Some(mods)
             },
             TranslationSource::DatapacksDirectory(path) => {
                 let mut entries = tokio::fs::read_dir(path).await?;
@@ -67,10 +68,10 @@ impl TranslationSource {
                         }
                     }
                 }
-                Ok(datapacks)
+                Some(datapacks)
             }
-            _ => Ok(vec![]),
-        }
+            _ => None,
+        })
     }
 
     pub fn parse_lang(self) -> ApiResult<(String, HashMap<String, String>)> {

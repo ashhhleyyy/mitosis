@@ -58,12 +58,12 @@ pub async fn load_translations_from(sources: &[TranslationSource]) -> ApiResult<
     let mut sources_queue = sources.to_vec();
     let mut all_sources = Vec::new();
     while let Some(source) = sources_queue.pop() {
-        let children = source.find_children().await.expect("failed to get children");
-        if children.is_empty() {
+        if let Some(children) = source.find_children().await.expect("failed to get children") {
+            for child in children {
+                sources_queue.insert(0, child);
+            }
+        } else {
             all_sources.push(source.clone());
-        }
-        for child in children {
-            sources_queue.insert(0, child);
         }
     }
 
