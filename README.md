@@ -6,14 +6,6 @@ Small service used to access minigame translations from the website.
 ```toml
 # config.toml
 
-### SOURCES
-# All these options can be omitted to disable them
-
-# Directory containing mod JARs to load translations from
-mods_dir = "/srv/server/mods/"
-# Directory containing datapacks to load translations from
-datapacks_dir = "/srv/server/datapacks/"
-
 ### TRANSLATION
 
 # The default locale code to fall back to
@@ -24,6 +16,17 @@ fallback_locale = "en_us"
 
 # The port for the HTTP server to listen on
 listen_port = 4040
+
+### SOURCES
+[[source]]
+type = "datapacks"
+path = "datapacks/"
+
+[[source]]
+type = "mods"
+path = "mods/"
+
+# You can keep adding more [[source]] blocks below if needed
 ```
 
 ### Logging

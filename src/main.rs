@@ -23,7 +23,7 @@ async fn main() {
 
     let config = load_config();
 
-    if config.mods_dir.is_none() && config.datapacks_dir.is_none() {
+    if config.sources.is_empty() {
         warn!("No sources are configured for loading translations!");
     }
 

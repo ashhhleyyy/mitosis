@@ -7,38 +7,53 @@ use crate::extract::TranslationSource;
 
 #[derive(Deserialize, Serialize, Clone)]
 pub struct Config {
-    pub mods_dir: Option<PathBuf>,
-    pub datapacks_dir: Option<PathBuf>,
-
     pub fallback_locale: String,
-
     pub listen_port: u16,
+    #[serde(rename = "source")]
+    pub sources: Vec<ConfigSourceWrapper>,
 }
 
 impl Default for Config {
     fn default() -> Self {
         Self {
-            mods_dir: Some(PathBuf::from("mods/")),
-            datapacks_dir: Some(PathBuf::from("datapacks/")),
             fallback_locale: "en_us".to_string(),
             listen_port: 4040,
+            sources: vec![
+                ConfigSource::Datapacks(PathBuf::from("datapacks/")).into(),
+                ConfigSource::Mods(PathBuf::from("mods/")).into(),
+            ],
         }
+    }
+}
+
+#[derive(Deserialize, Serialize, Clone)]
+pub struct ConfigSourceWrapper(ConfigSource);
+
+#[derive(Deserialize, Serialize, Clone)]
+#[serde(rename_all = "snake_case", tag = "type", content = "path")]
+pub enum ConfigSource {
+    Mods(PathBuf),
+    Datapacks(PathBuf),
+}
+
+impl Into<TranslationSource> for &ConfigSourceWrapper {
+    fn into(self) -> TranslationSource {
+        match &self.0 {
+            ConfigSource::Mods(path) => TranslationSource::ModsDirectory(path.clone()),
+            ConfigSource::Datapacks(path) => TranslationSource::DatapacksDirectory(path.clone()),
+        }
+    }
+}
+
+impl Into<ConfigSourceWrapper> for ConfigSource {
+    fn into(self) -> ConfigSourceWrapper {
+        ConfigSourceWrapper(self)
     }
 }
 
 impl Config {
     pub fn sources(&self) -> Vec<TranslationSource> {
-        let mut sources = Vec::new();
-
-        if let Some(mods) = &self.mods_dir {
-            sources.push(TranslationSource::ModsDirectory(mods.clone()));
-        }
-
-        if let Some(datapacks) = &self.datapacks_dir {
-            sources.push(TranslationSource::DatapacksDirectory(datapacks.clone()));
-        }
-
-        sources
+        self.sources.iter().map(|source| source.into()).collect::<Vec<_>>()
     }
 }
 
