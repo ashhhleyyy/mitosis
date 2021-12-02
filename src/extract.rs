@@ -5,7 +5,7 @@ use std::path::{Path, PathBuf};
 use walkdir::{DirEntry, WalkDir};
 use crate::util::ApiResult;
 
-const TRANSLATION_PATH_REGEX: &str = "^data/([a-z0-9_.-]*)/lang/([a-z]{2})_([a-z]{2}).json$";
+const TRANSLATION_PATH_REGEX: &str = "^data/([a-z0-9_.-]*)/lang/([a-z]{2}_[a-z]{2}).json$";
 
 #[derive(Clone, Debug)]
 pub enum TranslationSource {
@@ -102,7 +102,7 @@ pub fn extract_lang_files_from_zip(path: &Path) -> ApiResult<Vec<TranslationSour
             entry.read_to_string(&mut content)?;
             translations.push(TranslationSource::LangJson {
                 content,
-                locale: format!("{}_{}", captures.get(2).unwrap().as_str(), captures.get(3).unwrap().as_str()),
+                locale: captures.get(2).unwrap().as_str().to_string(),
             });
         }
     }
@@ -131,7 +131,7 @@ pub async fn extract_lang_files_from_dir(path: &Path) -> ApiResult<Vec<Translati
             let content = tokio::fs::read_to_string(entry.path()).await?;
             translations.push(TranslationSource::LangJson {
                 content,
-                locale: format!("{}_{}", captures.get(2).unwrap().as_str(), captures.get(3).unwrap().as_str()),
+                locale: captures.get(2).unwrap().as_str().to_string(),
             });
         }
     }
