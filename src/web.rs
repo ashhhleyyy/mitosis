@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use warp::Filter;
 use crate::config::Config;
 use crate::translations::TranslationsHolder;
+use crate::util::TranslationsMap;
 
 type WebApiResult = Result<Box<dyn warp::Reply>, warp::Rejection>;
 
@@ -14,27 +15,28 @@ async fn translate(default_locale: String, translations: TranslationsHolder, loc
             for key in keys {
                 if let Some(translation) = locale_translations.get(&key) {
                     translated.insert(key.clone(), translation.clone());
-                } else if let Some(default_translations) = translations.get(&default_locale) {
-                    translated.insert(key.clone(),default_translations.get(&key)
-                        .cloned().unwrap_or_else(|| key.clone()));
                 } else {
-                    translated.insert(key.clone(), key.clone());
+                    translation_fallback(&translations, &mut translated, &key, &default_locale);
                 }
             }
         },
         None => {
             for key in keys {
-                if let Some(default_translations) = translations.get(&default_locale) {
-                    translated.insert(key.clone(),default_translations.get(&key)
-                        .cloned().unwrap_or_else(|| key.clone()));
-                } else {
-                    translated.insert(key.clone(), key.clone());
-                }
+                translation_fallback(&translations, &mut translated, &key, &default_locale);
             }
         },
     }
 
     Ok(Box::new(warp::reply::json(&translated)))
+}
+
+async fn translation_fallback(translations: &TranslationsMap, translated: &mut HashMap<String, String>, key: &str, default_locale: &str) {
+    if let Some(default_translations) = translations.get(&default_locale) {
+        translated.insert(key.to_string(),default_translations.get(&key)
+            .cloned().unwrap_or_else(|| key.to_string()));
+    } else {
+        translated.insert(key.to_string(), key.to_string());
+    }
 }
 
 async fn reload_translations(translations: TranslationsHolder) -> WebApiResult {
