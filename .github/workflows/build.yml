@@ -31,3 +31,9 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: build
+      - name: Upload artifacts (Linux only)
+        if: matrix.os == 'ubuntu-latest'
+        uses: actions/upload-artifact@v2
+        with:
+          name: nucleoid-backend
+          path: target/release/nucleoid-backend
