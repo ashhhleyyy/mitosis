@@ -35,5 +35,5 @@ jobs:
         if: matrix.os == 'ubuntu-latest'
         uses: actions/upload-artifact@v2
         with:
-          name: nucleoid-backend
-          path: target/release/nucleoid-backend
+          name: mitosis
+          path: target/release/mitosis
