@@ -49,6 +49,30 @@ $ curl -H 'Content-Type: application/json' --data '["text.plasmid.game.open.join
 {"text.plasmid.game.open.join":"Click here to join"}
 ```
 
+### `GET /translate/<locale>/all`
+
+```bash
+$ curl -H 'Content-Type: application/json' -X 'GET' -v http://localhost:4040/translate/en_us/all
+...
+< HTTP/1.1 200 OK
+< content-type: application/json
+< content-length: 57
+< 
+{"text.plasmid.game.open.join":"Click here to join", ...}
+```
+
+### `GET /locales/all`
+
+```bash
+$ curl -H 'Content-Type: application/json' -X 'GET' -v http://localhost:4040/locales/all
+...
+< HTTP/1.1 200 OK
+< content-type: application/json
+< content-length: 27
+< 
+["fr_fr", "et_ee", "en_us"]
+```
+
 ### `POST /reload`
 
 This endpoint will only actually reload once a minute, to prevent abuse.
