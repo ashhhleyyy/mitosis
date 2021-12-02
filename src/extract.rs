@@ -97,7 +97,9 @@ pub fn extract_lang_files_from_zip(path: &Path) -> ApiResult<Vec<TranslationSour
     for i in 0..archive.len() {
         let mut entry = archive.by_index(i)?;
         let filename = entry.name().to_string();
+        trace!("In {:?}: {}", path, filename);
         if let Some(captures) = regex.captures(&filename) {
+            trace!("Match in {:?}: {}", path, filename);
             let mut content = String::new();
             entry.read_to_string(&mut content)?;
             translations.push(TranslationSource::LangJson {
@@ -106,6 +108,8 @@ pub fn extract_lang_files_from_zip(path: &Path) -> ApiResult<Vec<TranslationSour
             });
         }
     }
+
+    debug!("Loaded sources from ZIP {:?}: {:?}", path, translations);
 
     Ok(translations)
 }
