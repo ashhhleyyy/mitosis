@@ -5,7 +5,8 @@ use std::path::{Path, PathBuf};
 use walkdir::{DirEntry, WalkDir};
 use crate::util::ApiResult;
 
-const TRANSLATION_PATH_REGEX: &str = "^data/([a-z0-9_.-]*)/lang/([a-z]{2}_[a-z]{2}).json$";
+const PACK_TRANSLATION_PATH_REGEX: &str = "^data/([a-z0-9_.-]*)/lang/([a-z]{2}_[a-z]{2}).json$";
+const TRANSLATION_FILENAME_REGEX: &str = "^([a-z]{2}_[a-z]{2}).json$";
 
 #[derive(Clone, Debug)]
 pub enum TranslationSource {
@@ -22,6 +23,8 @@ pub enum TranslationSource {
     ModsDirectory(PathBuf),
     /// A directory of datapacks
     DatapacksDirectory(PathBuf),
+    /// A flat directory of language files
+    FlatDir(PathBuf),
 }
 
 // TODO: Should mods be validated here (check fabric.mod.json exists maybe?)
@@ -37,7 +40,7 @@ impl TranslationSource {
                 Some(result)
             },
             TranslationSource::DirectoryPack(path) => {
-                Some(extract_lang_files_from_dir(path).await?)
+                Some(extract_lang_files_from_datapack(path).await?)
             },
             TranslationSource::ModsDirectory(directory) => {
                 let mut entries = tokio::fs::read_dir(directory).await?;
@@ -69,6 +72,9 @@ impl TranslationSource {
                     }
                 }
                 Some(datapacks)
+            },
+            TranslationSource::FlatDir(path) => {
+                Some(extract_lang_files_from_dir(path).await?)
             }
             _ => None,
         })
@@ -91,7 +97,7 @@ pub fn extract_lang_files_from_zip(path: &Path) -> ApiResult<Vec<TranslationSour
     let file = fs::File::open(&path)?;
     let mut archive = zip::ZipArchive::new(file)?;
 
-    let regex = regex::Regex::new(TRANSLATION_PATH_REGEX).unwrap();
+    let regex = regex::Regex::new(PACK_TRANSLATION_PATH_REGEX).unwrap();
 
     let mut translations = Vec::new();
 
@@ -122,8 +128,8 @@ fn is_hidden(entry: &DirEntry) -> bool {
         .unwrap_or(false)
 }
 
-pub async fn extract_lang_files_from_dir(path: &Path) -> ApiResult<Vec<TranslationSource>> {
-    let regex = regex::Regex::new(TRANSLATION_PATH_REGEX).unwrap();
+pub async fn extract_lang_files_from_datapack(path: &Path) -> ApiResult<Vec<TranslationSource>> {
+    let regex = regex::Regex::new(PACK_TRANSLATION_PATH_REGEX).unwrap();
     let mut translations = Vec::new();
 
     for entry in WalkDir::new(path).into_iter()
@@ -137,6 +143,28 @@ pub async fn extract_lang_files_from_dir(path: &Path) -> ApiResult<Vec<Translati
             translations.push(TranslationSource::LangJson {
                 content,
                 locale: captures.get(2).unwrap().as_str().to_string(),
+            });
+        }
+    }
+
+    Ok(translations)
+}
+
+pub async fn extract_lang_files_from_dir(path: &Path) -> ApiResult<Vec<TranslationSource>> {
+    let regex = regex::Regex::new(TRANSLATION_FILENAME_REGEX).unwrap();
+    let mut translations = Vec::new();
+
+    for entry in WalkDir::new(path).into_iter()
+        .filter_entry(|e| !is_hidden(e))
+        .filter_map(|e| e.ok())
+    {
+        let filename = entry.path().strip_prefix(path).unwrap_or_else(|_| entry.path())
+            .display().to_string();
+        if let Some(captures) = regex.captures(&filename) {
+            let content = tokio::fs::read_to_string(entry.path()).await?;
+            translations.push(TranslationSource::LangJson {
+                content,
+                locale: captures.get(1).unwrap().as_str().to_string(),
             });
         }
     }

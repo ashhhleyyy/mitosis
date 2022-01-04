@@ -34,6 +34,7 @@ pub struct ConfigSourceWrapper(ConfigSource);
 pub enum ConfigSource {
     Mods(PathBuf),
     Datapacks(PathBuf),
+    FlatDir(PathBuf),
 }
 
 impl Into<TranslationSource> for &ConfigSourceWrapper {
@@ -41,6 +42,7 @@ impl Into<TranslationSource> for &ConfigSourceWrapper {
         match &self.0 {
             ConfigSource::Mods(path) => TranslationSource::ModsDirectory(path.clone()),
             ConfigSource::Datapacks(path) => TranslationSource::DatapacksDirectory(path.clone()),
+            ConfigSource::FlatDir(path) => TranslationSource::FlatDir(path.clone()),
         }
     }
 }
